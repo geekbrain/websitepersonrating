@@ -1,0 +1,6 @@
+c:\users\pmh\documents\visual studio 2012\Projects\AdultProg\AdultProg\bin\AdultProg.dll
+c:\users\pmh\documents\visual studio 2012\Projects\AdultProg\AdultProg\bin\AdultProg.pdb
+c:\users\pmh\documents\visual studio 2012\Projects\AdultProg\AdultProg\obj\Debug\AdultProg.dll
+c:\users\pmh\documents\visual studio 2012\Projects\AdultProg\AdultProg\obj\Debug\AdultProg.pdb
+C:\Users\PMH\Documents\Visual Studio 2012\Projects\AdultProg\AdultProg\obj\Debug\AdultProg.csprojResolveAssemblyReference.cache
+C:\Users\PMH\Documents\Visual Studio 2012\Projects\AdultProg\AdultProg\bin\Npgsql.dll
