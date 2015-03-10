@@ -107,12 +107,12 @@ namespace WSLayer
                     pageURL, cubeFact, cubeTable, GetCubeMaxDateName(siteId), cubeId, cubeMaxId, pageTable, cubePageId, pageId,
                     GetIdDateOfRangePagesOfSite(siteId, startDate, endDate), cubeNameId, nameId, numberPages);
             }
-            public static String CubeAddData(int nameId, int pageId, int fact)
+            public static String CubeAddData(int nameId, long pageId, int fact)
             {
                 return String.Format("insert into {0}({1},{2},{3},{4}) values({5},{6},current_date,{7})",
                     cubeTable, cubeNameId, cubePageId, cubeDate, cubeFact, nameId.ToString(), pageId.ToString(), fact.ToString());
             }
-            public static String CubeUpdateData(int nameId, int pageId, int fact)
+            public static String CubeUpdateData(int nameId, long pageId, int fact)
             {
                 return String.Format("update {0} set {1} = {2}, {3} = current_date where {4} in ({5})", 
                     cubeTable, cubeFact, fact.ToString(), cubeDate, cubeId, GetCubeMaxIdNamePage(nameId, pageId));
@@ -121,6 +121,10 @@ namespace WSLayer
             {
                 return String.Format("select {0},{1},{2} from {3} where {0} > {4} and {0} <= {5}",
                     pageId, pageURL, pageSiteId, pageTable, firstId.ToString(), ((long)numberId + firstId).ToString());
+            }
+            public static String CubeGetActualData(int nameId, long pageId)
+            {
+                return String.Format("select {0} from {1} where {2} in ({3})", cubeFact, cubeTable, cubeId, GetCubeMaxIdNamePage(nameId, pageId));
             }
 
             private static String GetCubeMaxDateName(int siteId)
@@ -146,7 +150,7 @@ namespace WSLayer
                     pageId, pageTable, pageSiteId, siteId.ToString(), pageDateCreation,
                     startDate.Date.ToString("dd.MM.yyyy"), endDate.Date.ToString("dd.MM.yyyy"));
             }
-            private static String GetCubeMaxIdNamePage(int nameId, int pageId)
+            private static String GetCubeMaxIdNamePage(int nameId, long pageId)
             {
                 return String.Format("select max({0}) from {1} where {2} = {3} and {4} = {5}",
                     cubeId, cubeTable, cubeNameId, nameId.ToString(), cubePageId, pageId.ToString());
