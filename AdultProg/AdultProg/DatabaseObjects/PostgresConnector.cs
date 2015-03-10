@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace WSLayer
 {
-    public class PostgresConnector : IConnector
+    public partial class PostgresConnector : IConnector
     {
         public List<NameResponse> GetNames()
         {
@@ -102,26 +102,25 @@ namespace WSLayer
         {
             List<StatisticResponse> statisticResponse = new List<StatisticResponse>();
             StatisticResponse response = new StatisticResponse();
-            response.PageId = 1;
+            response.PageURL = "www.lenta.ru";
             response.Fact = 10;
             statisticResponse.Add(response);
 
             return statisticResponse;
         }
 
-        public List<Task> RequestTask()
+        public List<TaskRequest> RequestTask()
         {
-            List<Task> taskResponse = new List<Task>();
-            Task task = new Task();
+            List<TaskRequest> taskResponse = new List<TaskRequest>();
+            TaskRequest task = new TaskRequest();
             task.TaskId = 1;
-            task.SiteId = 1;
             task.PageId = 1;
             task.PageURL = "www.lenta.ru";
             taskResponse.Add(task);
             return taskResponse;
         }
 
-        public void ResponseTask(List<Task> taskElements) { }
+        public void ResponseTask(List<TaskResponse> taskElements) { }
 
         //connection = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=postgres;Password=Qwerty12345;Database=sitestatsDB;");
     }

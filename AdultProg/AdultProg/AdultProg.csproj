@@ -88,7 +88,8 @@
     <Compile Include="ReqResObjects\PageResponse.cs" />
     <Compile Include="ReqResObjects\PhraseResponse.cs" />
     <Compile Include="ReqResObjects\StatisticResponse.cs" />
-    <Compile Include="ReqResObjects\Task.cs" />
+    <Compile Include="ReqResObjects\TaskRequest.cs" />
+    <Compile Include="ReqResObjects\TaskResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

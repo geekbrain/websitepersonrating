@@ -7,11 +7,15 @@ using System.Runtime.Serialization;
 namespace WSLayer
 {
     [DataContract]
-    public class StatisticResponse
+    public class TaskRequest
     {
         [DataMember]
-        public String PageURL;
+        public int TaskId;
         [DataMember]
-        public int Fact;
+        public int SiteId;
+        [DataMember]
+        public int PageId;
+        [DataMember]
+        public String PageURL;
     }
 }

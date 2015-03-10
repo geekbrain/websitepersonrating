@@ -58,14 +58,14 @@ namespace WSLayer
             return connector.GetStatisticInfo(siteId, nameId, startDate, endDate, numberPages);
         }
 
-        public List<Task> RequestTask()
+        public List<TaskRequest> RequestTask()
         {
             return connector.RequestTask();
         }
 
-        public void ResponseTask(List<Task> taskElements)
+        public void ResponseTask(List<TaskResponse> tasks)
         {
-            connector.ResponseTask(taskElements);
+            connector.ResponseTask(tasks);
         }
     }
 }

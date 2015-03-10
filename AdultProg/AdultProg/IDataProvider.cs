@@ -30,8 +30,8 @@ namespace WSLayer
         [OperationContract]
         List<StatisticResponse> GetStatisticInfo(int siteId, int nameId, DateTime startDate, DateTime endDate, int numberPages);
         [OperationContract]
-        List<Task> RequestTask();
+        List<TaskRequest> RequestTask();
         [OperationContract]
-        void ResponseTask(List<Task> taskElements);
+        void ResponseTask(List<TaskResponse> tasks);
     }
 }

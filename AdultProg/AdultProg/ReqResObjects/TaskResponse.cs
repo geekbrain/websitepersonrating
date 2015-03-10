@@ -7,7 +7,7 @@ using System.Runtime.Serialization;
 namespace WSLayer
 {
     [DataContract]
-    public class Task
+    public class TaskResponse
     {
         [DataMember]
         public int TaskId;
@@ -17,6 +17,8 @@ namespace WSLayer
         public int PageId;
         [DataMember]
         public String PageURL;
+        [DataMember]
+        public String NameId;
         [DataMember]
         public int Fact;
     }
