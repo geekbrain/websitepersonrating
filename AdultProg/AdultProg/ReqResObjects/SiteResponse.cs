@@ -15,7 +15,5 @@ namespace WSLayer
         public String Name;
         [DataMember]
         public String URL;
-        [DataMember]
-        public List<PageResponse> Pages;
     }
 }

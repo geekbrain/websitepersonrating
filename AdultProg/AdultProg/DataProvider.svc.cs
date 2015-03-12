@@ -60,12 +60,12 @@ namespace WSLayer
 
         public List<TaskRequest> RequestTask()
         {
-            return connector.RequestTask();
+            return Tasker.GetInstance.GetTask(connector);
         }
 
         public void ResponseTask(List<TaskResponse> tasks)
         {
-            connector.ResponseTask(tasks);
+            Tasker.GetInstance.SetTask(tasks, connector);
         }
     }
 }

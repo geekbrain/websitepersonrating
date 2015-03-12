@@ -10,15 +10,13 @@ namespace WSLayer
     public class TaskResponse
     {
         [DataMember]
-        public int TaskId;
-        [DataMember]
         public int SiteId;
         [DataMember]
         public int PageId;
         [DataMember]
         public String PageURL;
         [DataMember]
-        public String NameId;
+        public int NameId;
         [DataMember]
         public int Fact;
     }

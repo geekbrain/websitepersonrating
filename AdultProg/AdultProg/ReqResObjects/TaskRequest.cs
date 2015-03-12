@@ -10,8 +10,6 @@ namespace WSLayer
     public class TaskRequest
     {
         [DataMember]
-        public int TaskId;
-        [DataMember]
         public int SiteId;
         [DataMember]
         public int PageId;
