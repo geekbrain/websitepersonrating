@@ -8,15 +8,15 @@ namespace WSLayer
     public class Tasker
     {
         private static volatile Tasker instance;
-        private static Object syncInstanse = new Object();
-        private static Object syncInstanseMethods = new Object();
+        private static Object instanceLocker = new Object();
+        private static Object instanceMethodsLocker = new Object();
 
         public static Tasker GetInstance
         {
             private set { }
             get
             {
-                lock (syncInstanse)
+                lock (instanceLocker)
                 {
                     if (instance == null)
                         instance = new Tasker();
@@ -31,46 +31,29 @@ namespace WSLayer
         
         private Tasker() { }
 
-        public List<TaskRequest> GetTask(IConnector connector)
+        public void ResetId()
         {
-            lock(syncInstanseMethods)
+            lock (instanceMethodsLocker)
             {
-                List<TaskRequest> tasks;
-                try
-                {
-                    tasks = connector.RequestTask(currentId, tasksInRequest);
-                    if (tasks == null || tasks.Count == 0)
-                    {
-                        currentId = initialId;
-                        tasks = connector.RequestTask(currentId, tasksInRequest);
-                    }
-                }
-                catch (Exception ex) { throw ex; }
-                return tasks;
+                currentId = initialId;
             }
         }
 
-        public void SetTask(List<TaskResponse> tasks, IConnector connector)
+        public int GetNumberIdInTask()
         {
-            lock (syncInstanseMethods)
-            {
-                try
-                {
-                    if (tasks == null || tasks.Count == 0)
-                        throw new Exception("Tasks must not be null or empty");
-                    else if (connector == null)
-                        throw new Exception("Connector must not be null");
-                    else
-                    {
-                        connector.ResponseTask(tasks);
-                        //foreach (TaskResponse task in tasks)
-                        //{
-                        //    if (task != null)
-                        //        currentTasks.Remove(task.PageId);
-                        //}
-                    }
-                }
-                catch (Exception ex) { throw ex; }
+            return tasksInRequest;
+        }
+
+        public int GetNextId()
+        {
+            return currentId;
+        }
+
+        public void SetId(int id)
+        {
+            lock (Tasker.instanceMethodsLocker)
+            { 
+                currentId = id; 
             }
         }
     }

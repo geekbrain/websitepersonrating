@@ -7,7 +7,7 @@ namespace WSLayer
 {
     public partial class PostgresConnector : IConnector
     {
-        private static class QueryContainer
+        private static class QueryConstructor
         {
             public static readonly String nameTable = "\"name\"";
             public static readonly String nameId = "\"id\"";
@@ -38,7 +38,7 @@ namespace WSLayer
             public static readonly String cubePageId = "\"pageId\"";
             public static readonly String cubeDate = "\"date\"";
             public static readonly String cubeFact = "\"fact\"";
-            private static readonly String cubeMaxId = "\"maxId\"";
+            public static readonly String cubeMaxId = "\"maxId\"";
 
             public static String SelectAllNames()
             {
@@ -56,6 +56,10 @@ namespace WSLayer
             public static String SelectPagesDependsOnSite(int siteId)
             {
                 return String.Format("select {0}, {1} from {2} where {3} = {4}", pageId, pageURL, pageTable, pageSiteId, siteId.ToString());
+            }
+            public static String SelectPagesOfURL(string url)
+            {
+                return String.Format("select {0} from {1} where {2} = '{3}'", pageId, pageTable, pageURL, url);
             }
             public static String CreateName(String name)
             {
@@ -83,9 +87,9 @@ namespace WSLayer
             {
                 return String.Format("update {0} set {1} = '{2}', {3} = true where {4} = {5}", phraseTable, phraseName, phrase, phraseIsActual, phraseId, id);
             }
-            public static String UpdateSite(int id, String site)
+            public static String UpdateSite(int id, String site, String url)
             {
-                return String.Format("update {0} set {1} = '{2}' where {5} = {6}", siteTable, siteName, site, siteId, id.ToString());
+                return String.Format("update {0} set {1} = '{2}', {3} = '{4}' where {5} = {6}", siteTable, siteName, site, siteURL, url, siteId, id.ToString());
             }
             public static String DeleteName(int id)
             {
@@ -106,17 +110,17 @@ namespace WSLayer
             public static String CubeCommonInformation(int siteId)
             {
                 return String.Format("select c.{0},sum(c.{1}) {1} from {2} c join ({3}) mdr on c.{4} = mdr.{5} group by c.{0}", 
-                    cubeNameId, cubeFact, cubeTable, GetCubeMaxDateName(siteId), cubeId, cubeMaxId);
+                    cubeNameId, cubeFact, cubeTable, GetCubeMaxDateNamePage(siteId), cubeId, cubeMaxId);
             }
             public static String CubeDailyInformation(int siteId)
             {
                 return String.Format("select c.{0},count(c.{1}) {1} from {2} c join ({3}) mdr on c.{4} = mdr.{5} where c.{6} in ({7}) group by c.{0}",
-                    cubeNameId, cubeFact, cubeTable, GetCubeMaxDateName(siteId), cubeId, cubeMaxId, cubePageId, GetIdTodayPagesOfSite(siteId));
+                    cubeNameId, cubeFact, cubeTable, GetCubeMaxDateNamePage(siteId), cubeId, cubeMaxId, cubePageId, GetIdTodayPagesOfSite(siteId));
             }
             public static String CubeStatisticInformation(int siteId, int nameId, DateTime startDate, DateTime endDate, int numberPages)
             {
-                return String.Format("select p.{0},c.{1} from {2} c join ({3}) mdr on c.{4} = mdr.{5} join {6} p on c.{7} = p.{8} where c.{7} in ({9}) and c.{10} = {11} limit {12}",
-                    pageURL, cubeFact, cubeTable, GetCubeMaxDateName(siteId), cubeId, cubeMaxId, pageTable, cubePageId, pageId,
+                return String.Format("select p.{0},c.{1} from {2} c join ({3}) mdr on c.{4} = mdr.{5} join {6} p on c.{7} = p.{8} where c.{7} in ({9}) and c.{10} = {11} order by c.{1} desc limit {12}",
+                    pageURL, cubeFact, cubeTable, GetCubeMaxDateNamePage(siteId), cubeId, cubeMaxId, pageTable, cubePageId, pageId,
                     GetIdDateOfRangePagesOfSite(siteId, startDate, endDate), cubeNameId, nameId, numberPages);
             }
             public static String CubeAddData(int nameId, int pageId, int fact)
@@ -129,10 +133,10 @@ namespace WSLayer
                 return String.Format("update {0} set {1} = {2}, {3} = current_date where {4} in ({5})", 
                     cubeTable, cubeFact, fact.ToString(), cubeDate, cubeId, GetCubeMaxIdNamePage(nameId, pageId));
             }
-            public static String GetTask(int firstId, int numberRows)
+            public static String GetTask(int id, int numberRecords)
             {
-                return String.Format("select {0},{1},{2} from {3} where {0} >= {4} and {0} < {5})",
-                    pageId, pageURL, pageSiteId, pageTable, firstId.ToString(), (firstId + numberRows).ToString());
+                return String.Format("select {0},{1},{2} from {3} where {0} >= {4} and {2} in ({5}) order by {0} limit {6}",
+                    pageId, pageURL, pageSiteId, pageTable, id.ToString(), GetIdActualSites(), numberRecords.ToString());
             }
             public static String CubeGetActualData(int nameId, int pageId)
             {
@@ -144,9 +148,18 @@ namespace WSLayer
                 return String.Format("select {0} {0},max({1}) {2} from {3} where {0} in ({4}) and {5} in ({6}) group by {0}",
                     cubeNameId, cubeId, cubeMaxId, cubeTable, GetIdActualNames(), cubePageId, GetIdPagesOfSite(siteId));
             }
+            private static String GetCubeMaxDateNamePage(int siteId)
+            {
+                return String.Format("select {0} {0},max({1}) {2} from {3} where {0} in ({4}) and {5} in ({6}) group by {0},{7}",
+                    cubeNameId, cubeId, cubeMaxId, cubeTable, GetIdActualNames(), cubePageId, GetIdPagesOfSite(siteId), cubePageId);
+            }
             private static String GetIdActualNames()
             {
                 return String.Format("select {0} from {1} where {2} = true", nameId, nameTable, nameIsActual);
+            }
+            private static String GetIdActualSites()
+            {
+                return String.Format("select {0} from {1} where {2} = true", siteId, siteTable, siteIsActual);
             }
             private static String GetIdPagesOfSite(int siteId)
             {

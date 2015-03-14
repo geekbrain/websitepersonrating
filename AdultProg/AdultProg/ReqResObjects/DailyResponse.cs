@@ -12,6 +12,6 @@ namespace WSLayer
         [DataMember]
         public int NameId;
         [DataMember]
-        public int Fact;
+        public long Fact;
     }
 }

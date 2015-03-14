@@ -12,415 +12,304 @@ namespace WSLayer
 
         public List<NameResponse> GetNames()
         {
-            List<NameResponse> names = new List<NameResponse>();
-
+            List<NameResponse> names;
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                connection.Open();
                 try
                 {
-                    NpgsqlCommand command = new NpgsqlCommand(QueryContainer.SelectAllNames(), connection);
-                    NpgsqlDataReader reared = command.ExecuteReader();
-                    while (reared.Read())
-                    {
-                        NameResponse name = new NameResponse();
-                        name.Id = (int)reared[QueryContainer.nameId.Trim('"')];
-                        name.Name = (String)reared[QueryContainer.nameName.Trim('"')];
-                        names.Add(name);
-                    }
+                    connection.Open();
+                    names = QueryTransformer.TransformIntoName(new NpgsqlCommand(QueryConstructor.SelectAllNames(), connection));
                     foreach (NameResponse nameResponse in names)
                     {
-                        List<PhraseResponse> phrases = new List<PhraseResponse>();
-                        command = new NpgsqlCommand(QueryContainer.SelectPhrasesDependsOnName(nameResponse.Id), connection);
-                        reared = command.ExecuteReader();
-                        while (reared.Read())
-                        {
-                            PhraseResponse phrase = new PhraseResponse();
-                            phrase.Id = (int)reared[QueryContainer.phraseId.Trim('"')];
-                            phrase.Name = (String)reared[QueryContainer.phraseName.Trim('"')];
-                            phrases.Add(phrase);
-                        }
-                        nameResponse.Phrases = phrases;
+                        nameResponse.Phrases = QueryTransformer.TransformIntoPhrase(new NpgsqlCommand(QueryConstructor.SelectPhrasesDependsOnName(nameResponse.Id), connection));
                     }
-
                 }
                 catch (Exception ex) { throw ex; }
-                connection.Close();
+                finally { connection.Close(); }
             }
             return names;
         }
 
         public List<SiteResponse> GetSites()
         {
-            List<SiteResponse> sites = new List<SiteResponse>();
-
+            List<SiteResponse> sites;
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                connection.Open();
                 try
                 {
-                    NpgsqlCommand command = new NpgsqlCommand(QueryContainer.SelectAllSites(), connection);
-                    NpgsqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        SiteResponse site = new SiteResponse();
-                        site.Id = (int)reader[QueryContainer.siteId.Trim('"')];
-                        site.Name = (String)reader[QueryContainer.siteName.Trim('"')];
-                        site.URL = (String)reader[QueryContainer.siteURL.Trim('"')];
-                        sites.Add(site);
-                    }
+                    connection.Open();
+                    sites = QueryTransformer.TransformIntoSite(new NpgsqlCommand(QueryConstructor.SelectAllSites(), connection));
                 }
                 catch (Exception ex) { throw ex; }
-                connection.Close();
+                finally { connection.Close(); }
             }
             return sites;
         }
 
         public void SetNames(List<NameResponse> names)
         {
-            if (names != null)
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+                try
                 {
-                    connection.Open();
-                    try
+                    Validator.Validate<NameResponse>(names);
+                    foreach (NameResponse name in names)
                     {
-                        NpgsqlCommand command;
-                        NpgsqlDataReader reader;
-                        foreach (NameResponse name in names)
+                        Validator.Validate(name);
+                        foreach (PhraseResponse phrase in name.Phrases)
                         {
-                            if (name != null)
+                            Validator.Validate(phrase);
+                        }
+                    }
+                    connection.Open();
+                    foreach (NameResponse name in names)
+                    {
+                        if (name.Id == 0)
+                        {
+                            name.Id = QueryTransformer.TransformIntoNameId(new NpgsqlCommand(QueryConstructor.CreateName(name.Name), connection));
+                        }
+                        else
+                        {
+                            (new NpgsqlCommand(QueryConstructor.UpdateName(name.Id, name.Name), connection)).ExecuteNonQuery();
+                            (new NpgsqlCommand(QueryConstructor.DeleteAllPhrasesOfName(name.Id), connection)).ExecuteNonQuery();
+                        }
+                        foreach (PhraseResponse phrase in name.Phrases)
+                        {
+                            if (phrase.Id == 0)
                             {
-                                if (name.Name == null || name.Name.Equals(""))
-                                    throw new Exception("Name of name must not be empty or null");
-                                else
-                                {
-                                    if (name.Id <= 0)
-                                    {
-                                        command = new NpgsqlCommand(QueryContainer.CreateName(name.Name), connection);
-                                        reader = command.ExecuteReader();
-                                        reader.Read();
-                                        name.Id = (int)reader[QueryContainer.nameId.Trim('"')];
-                                        reader.Close();
-                                    }
-                                    else
-                                    {
-                                        command = new NpgsqlCommand(QueryContainer.UpdateName(name.Id, name.Name), connection);
-                                        command.ExecuteNonQuery();
-                                        command = new NpgsqlCommand(QueryContainer.DeleteAllPhrasesOfName(name.Id), connection);
-                                        command.ExecuteNonQuery();
-                                    }
-                                    if (name.Phrases != null && name.Phrases.Count() != 0)
-                                    {
-                                        Boolean isAllPhrasesAreNull = true;
-                                        foreach (PhraseResponse phrase in name.Phrases)
-                                        {
-                                            if (phrase != null)
-                                            {
-                                                isAllPhrasesAreNull = false;
-                                                if (phrase.Name == null || phrase.Name.Equals(""))
-                                                    throw new Exception("Name of phrase must not be empty or null");
-                                                else
-                                                {
-                                                    if (phrase.Id <= 0)
-                                                    {
-                                                        command = new NpgsqlCommand(QueryContainer.CreatePhrase(phrase.Name, name.Id), connection);
-                                                        command.ExecuteNonQuery();
-                                                    }
-                                                    else
-                                                    {
-                                                        command = new NpgsqlCommand(QueryContainer.UpdatePhrase(phrase.Id, phrase.Name), connection);
-                                                        command.ExecuteNonQuery();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if (isAllPhrasesAreNull)
-                                        {
-                                            command = new NpgsqlCommand(QueryContainer.CreatePhrase(name.Name, name.Id), connection);
-                                            command.ExecuteNonQuery();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        command = new NpgsqlCommand(QueryContainer.CreatePhrase(name.Name, name.Id), connection);
-                                        command.ExecuteNonQuery();
-                                    }
-                                }
+                                (new NpgsqlCommand(QueryConstructor.CreatePhrase(phrase.Name, name.Id), connection)).ExecuteNonQuery();
+                            }
+                            else
+                            {
+                                (new NpgsqlCommand(QueryConstructor.UpdatePhrase(phrase.Id, phrase.Name), connection)).ExecuteNonQuery();
                             }
                         }
                     }
-                    catch (Exception ex) { throw ex; }
-                    connection.Close();
                 }
+                catch (ValidationException ex) { throw ex; }
+                catch (Exception ex) { throw ex; }
+                finally { connection.Close(); }
             }
         }
 
         public void SetSites(List<SiteResponse> sites)
         {
-            if (sites != null)
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+                try
                 {
-                    connection.Open();
-                    try
+                    Validator. Validate<SiteResponse>(sites);
+                    foreach (SiteResponse site in sites)
                     {
-                        NpgsqlCommand command;
-                        NpgsqlDataReader reader;
-                        foreach (SiteResponse site in sites)
-                        {
-
-                            if (site != null)
-                            {
-                                if (site.Name == null || site.Name.Equals(""))
-                                    throw new Exception("Name of site must not be empty or null");
-                                else
-                                {
-                                    if (site.Id <= 0)
-                                    {
-                                        if (site.URL == null || site.URL.Equals(""))
-                                            throw new Exception("URL of site must not be empty or null");
-                                        else
-                                        {
-                                            command = new NpgsqlCommand(QueryContainer.CreateSite(site.Name, site.URL), connection);
-                                            reader = command.ExecuteReader();
-                                            reader.Read();
-                                            site.Id = (int)reader[QueryContainer.siteId.Trim('"')];
-                                            reader.Close();
-                                            command = new NpgsqlCommand(QueryContainer.CreatePage(site.URL, site.Id), connection);
-                                            command.ExecuteNonQuery();
-                                        }                                       
-                                    }
-                                    else
-                                    {
-                                        command = new NpgsqlCommand(QueryContainer.UpdateSite(site.Id, site.Name), connection);
-                                        reader = command.ExecuteReader();
-                                    }                                    
-                                }
-                            }
-                        }
+                        Validator.Validate(site);
                     }
-                    catch (Exception ex) { throw ex; }
-                    connection.Close();
+                    connection.Open();
+                    foreach (SiteResponse site in sites)
+                    {
+                        if (site.Id == 0)
+                        {
+                            site.Id = QueryTransformer.TransformIntoSiteId(new NpgsqlCommand(QueryConstructor.CreateSite(site.Name, site.URL), connection));
+                            (new NpgsqlCommand(QueryConstructor.CreatePage(site.URL, site.Id), connection)).ExecuteNonQuery();
+                        }
+                        else
+                        {
+                            (new NpgsqlCommand(QueryConstructor.UpdateSite(site.Id, site.Name, site.URL), connection)).ExecuteNonQuery();
+                        }
+
+                    }
                 }
+                catch (ValidationException ex) { throw ex; }
+                catch (Exception ex) { throw ex; }
+                finally { connection.Close(); }
             }
         }
 
         public void DeleteNames(List<NameResponse> names)
         {
-            if (names != null)
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+                try
                 {
+                    Validator.Validate<NameResponse>(names);
                     connection.Open();
-                    try
+                    foreach (NameResponse name in names)
                     {
-                        NpgsqlCommand command;
-                        foreach (NameResponse name in names)
-                        {
-                            if (name != null && name.Id > 0)
-                            {
-                                command = new NpgsqlCommand(QueryContainer.DeleteName(name.Id));
-                                command.ExecuteNonQuery();
-                                command = new NpgsqlCommand(QueryContainer.DeleteAllPhrasesOfName(name.Id));
-                                command.ExecuteNonQuery();
-                            }
-                        }
-                        
+                        (new NpgsqlCommand(QueryConstructor.DeleteName(name.Id), connection)).ExecuteNonQuery();
+                        (new NpgsqlCommand(QueryConstructor.DeleteAllPhrasesOfName(name.Id), connection)).ExecuteNonQuery();
                     }
-                    catch (Exception ex) { throw ex; }
-                    connection.Close();
                 }
+                catch (ValidationException ex) { throw ex; }
+                catch (Exception ex) { throw ex; }
+                finally { connection.Close(); }
             }
         }
 
         public void DeleteSites(List<SiteResponse> sites)
         {
-            if (sites != null)
-            {
-                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+            {  
+                try
                 {
+                    Validator.Validate<SiteResponse>(sites);
                     connection.Open();
-                    try
+                    foreach (SiteResponse site in sites)
                     {
-                        NpgsqlCommand command;
-                        foreach (SiteResponse site in sites)
-                        {
-                            if (site != null && site.Id > 0)
-                            {
-                                command = new NpgsqlCommand(QueryContainer.DeleteAllPagesOfSite(site.Id));
-                                command.ExecuteNonQuery();
-                                command = new NpgsqlCommand(QueryContainer.DeleteSite(site.Id));
-                                command.ExecuteNonQuery();
-                            }
-                        }
-
+                        (new NpgsqlCommand(QueryConstructor.DeleteAllPagesOfSite(site.Id), connection)).ExecuteNonQuery();
+                        (new NpgsqlCommand(QueryConstructor.DeleteSite(site.Id), connection)).ExecuteNonQuery();
                     }
-                    catch (Exception ex) { throw ex; }
-                    connection.Close();
                 }
+                catch (ValidationException ex) { throw ex; }
+                catch (Exception ex) { throw ex; }
+                finally { connection.Close(); }
             }
         }
 
         public List<CommonResponse> GetCommonInfo(int siteId)
         {
-            List<CommonResponse> commonResponse = new List<CommonResponse>();
+            List<CommonResponse> responses;
+            Validator.Validate(siteId);
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                connection.Open();
                 try
                 {
-                    NpgsqlCommand command = new NpgsqlCommand(QueryContainer.CubeCommonInformation(siteId));
-                    NpgsqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        CommonResponse response = new CommonResponse();
-                        response.NameId = (int)reader[QueryContainer.cubeNameId.Trim('"')];
-                        response.Fact = (int)reader[QueryContainer.cubeFact.Trim('"')];
-                        commonResponse.Add(response);
-                    }
+                    connection.Open();
+                    responses = QueryTransformer.TransformIntoCommonResponse(new NpgsqlCommand(QueryConstructor.CubeCommonInformation(siteId), connection));
                 }
+                catch (ValidationException ex) { throw ex; }
                 catch (Exception ex) { throw ex; }
-                connection.Close();
+                finally { connection.Close(); }
             }
-            return commonResponse;
+            return responses;
         }
 
         public List<DailyResponse> GetDailyInfo(int siteId)
         {
-            List<DailyResponse> dailyResponse = new List<DailyResponse>();
+            List<DailyResponse> responses;
+            Validator.Validate(siteId);
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                connection.Open();
                 try
                 {
-                    NpgsqlCommand command = new NpgsqlCommand(QueryContainer.CubeDailyInformation(siteId));
-                    NpgsqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        DailyResponse response = new DailyResponse();
-                        response.NameId = (int)reader[QueryContainer.cubeNameId.Trim('"')];
-                        response.Fact = (int)reader[QueryContainer.cubeFact.Trim('"')];
-                        dailyResponse.Add(response);
-                    }
+                    connection.Open();
+                    responses = QueryTransformer.TransformIntoDailyResponse(new NpgsqlCommand(QueryConstructor.CubeDailyInformation(siteId), connection));
                 }
+                catch (ValidationException ex) { throw ex; }
                 catch (Exception ex) { throw ex; }
-                connection.Close();
+                finally { connection.Close(); }
             }
-            return dailyResponse;
+            return responses;
         }
 
         public List<StatisticResponse> GetStatisticInfo(int siteId, int nameId, DateTime startDate, DateTime endDate, int numberPages)
         {
-            List<StatisticResponse> statisticResponse = new List<StatisticResponse>();
+            List<StatisticResponse> responses;
+            Validator.Validate(siteId);
+            Validator.Validate(nameId);
+            Validator.Validate(numberPages);
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                connection.Open();
                 try
                 {
-                    NpgsqlCommand command = new NpgsqlCommand(QueryContainer.CubeStatisticInformation(siteId, nameId, startDate, endDate, numberPages));
-                    NpgsqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        StatisticResponse response = new StatisticResponse();
-                        response.PageURL = (String)reader[QueryContainer.pageURL.Trim('"')];
-                        response.Fact = (int)reader[QueryContainer.cubeFact.Trim('"')];
-                        statisticResponse.Add(response);
-                    }
+                    connection.Open();
+                    responses = QueryTransformer.TransformIntoStatisticResponse(new NpgsqlCommand(QueryConstructor.CubeStatisticInformation(siteId, nameId, startDate, endDate, numberPages), connection));
                 }
+                catch (ValidationException ex) { throw ex; }
                 catch (Exception ex) { throw ex; }
-                connection.Close();
+                finally { connection.Close(); }
             }
-            return statisticResponse;
+            return responses;
         }
 
-        public List<TaskRequest> RequestTask(int firstId, int numberRows)
+        public List<TaskRequest> RequestTask()
         {
-            List<TaskRequest> tasks = new List<TaskRequest>();
+            List<TaskRequest> tasks;
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                connection.Open();
                 try
                 {
-                    NpgsqlCommand command = new NpgsqlCommand(QueryContainer.GetTask(firstId, numberRows));
-                    NpgsqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
+                    connection.Open();
+                    tasks = QueryTransformer.TransformIntoTask(new NpgsqlCommand(QueryConstructor.GetTask(Tasker.GetInstance.GetNextId(), Tasker.GetInstance.GetNumberIdInTask()), connection));
+                    if (tasks.Count == 0)
                     {
-                        TaskRequest task = new TaskRequest();
-                        task.PageId = (int)reader[QueryContainer.pageId.Trim('"')];
-                        task.PageURL = (String)reader[QueryContainer.pageURL.Trim('"')];
-                        task.SiteId = (int)reader[QueryContainer.pageSiteId.Trim('"')];
-                        tasks.Add(task);
+                        Tasker.GetInstance.ResetId();
+                        tasks = RequestTask();
                     }
+                    Tasker.GetInstance.SetId(tasks[tasks.Count - 1].PageId + 1);
                 }
                 catch (Exception ex) { throw ex; }
-                connection.Close();
+                finally { connection.Close(); }
             }
             return tasks;
         }
 
         public void ResponseTask(List<TaskResponse> tasks)
         {
-            if (tasks != null)
+            using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
-                using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+                try
                 {
-                    connection.Open();
-                    try
+                    Validator.Validate<TaskResponse>(tasks);
+                    foreach (TaskResponse task in tasks)
                     {
-                        foreach (TaskResponse task in tasks)
+                        Validator.Validate(task);
+                    }
+                    connection.Open();
+                    foreach (TaskResponse task in tasks)
+                    {
+                        if (task.PageId == 0)
                         {
-                            if (task != null)
+                            int pageId = QueryTransformer.TransformIntoPageId(new NpgsqlCommand(QueryConstructor.SelectPagesOfURL(task.PageURL), connection));
+                            if (pageId != 0)
                             {
-                                if (task.SiteId <= 0)
-                                    throw new Exception("Site id must not be null");
-                                else if (task.NameId <= 0)
-                                    throw new Exception("Name id must not be null");
-                                else if (task.PageURL == null || task.PageURL.Equals(""))
-                                    throw new Exception("Page url must not be null or empty");
-                                else if (task.Fact < 0 )
-                                    throw new Exception("Fact must be non negative");
-                                else
+                                task.PageId = pageId;
+                                if (QueryTransformer.TransformIntoIsCubeFactExists(new NpgsqlCommand(QueryConstructor.CubeGetActualData(task.NameId, task.PageId), connection)))
                                 {
-                                    if (task.PageId <= 0)
+                                    int fact = QueryTransformer.TransformIntoCubeFact(new NpgsqlCommand(QueryConstructor.CubeGetActualData(task.NameId, task.PageId), connection));
+                                    if (fact == task.Fact)
                                     {
-                                        NpgsqlCommand command = new NpgsqlCommand(QueryContainer.CreatePage(task.PageURL, task.SiteId), connection);
-                                        NpgsqlDataReader reader = command.ExecuteReader();
-                                        reader.Read();
-                                        task.PageId = (int)reader[QueryContainer.pageId.Trim('"')];
-                                        reader.Close();
-                                        command = new NpgsqlCommand(QueryContainer.CubeAddData(task.NameId, task.PageId, task.Fact), connection);
-                                        command.ExecuteNonQuery();
+                                        (new NpgsqlCommand(QueryConstructor.CubeUpdateData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
                                     }
                                     else
                                     {
-                                        NpgsqlCommand command = new NpgsqlCommand(QueryContainer.CubeGetActualData(task.NameId, task.PageId), connection);
-                                        NpgsqlDataReader reader = command.ExecuteReader();
-                                        if (reader.Read())
-                                        {
-                                            int newFact = (int)reader[QueryContainer.cubeFact.Trim('"')];
-                                            reader.Close();
-                                            if (task.Fact == newFact)
-                                            {
-                                                command = new NpgsqlCommand(QueryContainer.CubeUpdateData(task.NameId, task.PageId, task.Fact), connection);
-                                                command.ExecuteNonQuery();
-                                            }
-                                            else
-                                            {
-                                                command = new NpgsqlCommand(QueryContainer.CubeAddData(task.NameId, task.PageId, newFact), connection);
-                                                command.ExecuteNonQuery();
-                                            }
-                                        }
+                                        (new NpgsqlCommand(QueryConstructor.CubeAddData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
                                     }
                                 }
+                                else
+                                {
+                                    (new NpgsqlCommand(QueryConstructor.CubeAddData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                task.PageId = QueryTransformer.TransformIntoPageId(new NpgsqlCommand(QueryConstructor.CreatePage(task.PageURL, task.SiteId), connection));
+                                (new NpgsqlCommand(QueryConstructor.CubeAddData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
+                            }
+                        }
+                        else
+                        {
+                            if (QueryTransformer.TransformIntoIsCubeFactExists(new NpgsqlCommand(QueryConstructor.CubeGetActualData(task.NameId, task.PageId), connection)))
+                            {
+                                int fact = QueryTransformer.TransformIntoCubeFact(new NpgsqlCommand(QueryConstructor.CubeGetActualData(task.NameId, task.PageId), connection));
+                                if (task.Fact == fact)
+                                {
+                                    (new NpgsqlCommand(QueryConstructor.CubeUpdateData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
+                                }
+                                else
+                                {
+                                    (new NpgsqlCommand(QueryConstructor.CubeAddData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                (new NpgsqlCommand(QueryConstructor.CubeAddData(task.NameId, task.PageId, task.Fact), connection)).ExecuteNonQuery();
                             }
                         }
                     }
-                    catch (Exception ex) { throw ex; }
-                    connection.Close();
                 }
+                catch (ValidationException ex) { throw ex; }
+                catch (Exception ex) { throw ex; }
+                connection.Close();
             }
-
         }
     }
 }

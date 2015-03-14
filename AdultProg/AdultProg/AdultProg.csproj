@@ -71,8 +71,11 @@
   <ItemGroup>
     <Compile Include="DatabaseObjects\IConnector.cs" />
     <Compile Include="DatabaseObjects\PostgresConnector.cs" />
-    <Compile Include="DatabaseObjects\QueryContainer.cs" />
+    <Compile Include="DatabaseObjects\QueryConstructor.cs" />
+    <Compile Include="DatabaseObjects\QueryTransformer.cs" />
     <Compile Include="DatabaseObjects\Tasker.cs" />
+    <Compile Include="DatabaseObjects\ValidationException.cs" />
+    <Compile Include="DatabaseObjects\Validator.cs" />
     <Compile Include="DataProvider.svc.cs">
       <DependentUpon>DataProvider.svc</DependentUpon>
     </Compile>

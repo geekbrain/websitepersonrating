@@ -22,7 +22,6 @@ namespace WSLayer
             return connector.GetSites();
         }
 
-
         public void SetNames(List<NameResponse> names)
         {
             connector.SetNames(names);
@@ -60,12 +59,12 @@ namespace WSLayer
 
         public List<TaskRequest> RequestTask()
         {
-            return Tasker.GetInstance.GetTask(connector);
+            return connector.RequestTask();
         }
 
         public void ResponseTask(List<TaskResponse> tasks)
         {
-            Tasker.GetInstance.SetTask(tasks, connector);
+            connector.ResponseTask(tasks);
         }
     }
 }
