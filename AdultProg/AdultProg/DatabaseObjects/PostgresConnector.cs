@@ -3,12 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Npgsql;
+using System.Configuration;
+using System.Web.Configuration;
+
 
 namespace WSLayer
 {
     public partial class PostgresConnector : IConnector
     {
-        private string connectionString = "Server=127.0.0.1;Port=5432;User Id=postgres;Password=Qwerty12345;Database=sitestatsDB;";
+        private string connectionString;
+        private readonly String connectionName = "postgresConnectionString";
+
+        public PostgresConnector()
+        {
+            ConnectionStringSettingsCollection settings = WebConfigurationManager.ConnectionStrings;
+            foreach(ConnectionStringSettings setting in settings)
+            {
+                if (setting.Name == connectionName)
+                    connectionString = setting.ConnectionString;
+            }
+        }
 
         public List<NameResponse> GetNames()
         {
