@@ -9,7 +9,6 @@ namespace WSLayer
     {
         private static class Validator
         {
-
             public static void Validate<T>(List<T> someObjects)
             {
                 if (someObjects == null)

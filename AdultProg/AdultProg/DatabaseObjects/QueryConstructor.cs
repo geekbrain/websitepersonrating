@@ -31,6 +31,7 @@ namespace WSLayer
             public static readonly String pageURL = "\"url\"";
             public static readonly String pageDateCreation = "\"dateCreation\"";
             public static readonly String pageSiteId = "\"siteId\"";
+            public static readonly String pageIsInWork = "\"isInWork\"";
 
             public static readonly String cubeTable = "\"cube\"";
             public static readonly String cubeId = "\"id\"";
@@ -133,10 +134,24 @@ namespace WSLayer
                 return String.Format("update {0} set {1} = {2}, {3} = current_date where {4} in ({5})", 
                     cubeTable, cubeFact, fact.ToString(), cubeDate, cubeId, GetCubeMaxIdNamePage(nameId, pageId));
             }
-            public static String GetTask(int id, int numberRecords)
+            public static String GetTask(int numberRecords)
             {
-                return String.Format("select {0},{1},{2} from {3} where {0} >= {4} and {2} in ({5}) order by {0} limit {6}",
-                    pageId, pageURL, pageSiteId, pageTable, id.ToString(), GetIdActualSites(), numberRecords.ToString());
+                return String.Format("select {0},{1},{2} from {3} where {2} in ({4}) and {5} = false order by {0} limit {6}",
+                    pageId, pageURL, pageSiteId, pageTable, GetIdActualSites(), pageIsInWork, numberRecords.ToString());
+            }
+            public static String SetTask(List<int> ids)
+            {
+                String idString = "";
+                foreach(int id in ids)
+                {
+                    idString = String.Concat(idString, ",", id.ToString());
+                }
+                idString = idString.TrimStart(',');
+                return String.Format("update {0} set {1} = true where {2} in ({3})", pageTable, pageIsInWork, pageId, idString);
+            }
+            public static String ResetTasks()
+            {
+                return String.Format("update {0} set {1} = false", pageTable, pageIsInWork);
             }
             public static String CubeGetActualData(int nameId, int pageId)
             {

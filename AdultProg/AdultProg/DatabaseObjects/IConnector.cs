@@ -17,7 +17,7 @@ namespace WSLayer
         List<CommonResponse> GetCommonInfo(int siteId);
         List<DailyResponse> GetDailyInfo(int siteId);
         List<StatisticResponse> GetStatisticInfo(int siteId, int nameId, DateTime startDate, DateTime endDate, int numberPages);
-        List<TaskRequest> RequestTask();
+        List<TaskRequest> RequestTask(int numberPages);
         void ResponseTask(List<TaskResponse> tasks);
     }
 }
