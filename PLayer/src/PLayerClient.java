@@ -14,6 +14,12 @@ public class PLayerClient {
         catch (ClassNotFoundException e) {}
         catch (InstantiationException e) {}
         catch (IllegalAccessException e) {}
-        MainForm mainForm = new MainForm(new Controller(new WSModel()));
+        try {
+            MainForm mainForm = new MainForm(new Controller(new WSModel()));
+        }
+        catch(Exception ex) {
+            System.out.println(ex.getMessage());
+            System.out.println(ex.getStackTrace());
+        }
     }
 }

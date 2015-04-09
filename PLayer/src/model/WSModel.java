@@ -10,6 +10,11 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import javax.xml.ws.BindingProvider;
+import java.util.Properties;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class WSModel implements IModel{
 
@@ -17,7 +22,16 @@ public class WSModel implements IModel{
     private IDataProvider servicePort;
 
     public WSModel() {
+        Properties props = new Properties();
+        try {
+            props.load(new FileInputStream(new File("config/config")));
+        }
+        catch(Exception ex){
+            System.out.println(ex.getMessage());
+            System.out.println(ex.getStackTrace());
+        }
         servicePort = (new DataProvider()).getBasicHttpBindingIDataProvider();
+        ((BindingProvider)servicePort).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, props.getProperty("wsdlLocation"));
     }
 
     public List<NameResponse> getNames(){
